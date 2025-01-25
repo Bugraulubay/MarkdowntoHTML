@@ -1,5 +1,6 @@
 from enum import Enum
-from htmlnode import LeafNode
+from htmlnode import *
+
 import regex
 
 class TextType(Enum):
@@ -24,31 +25,31 @@ class TextNode:
     def __repr__(self):
         return f"TextNode({self.text}, {self.text_type.value}, {self.url})"
     
-    def text_node_to_html_node(self,text_node):
-        match(text_node):
+    def text_node_to_html_node(text_node):
+        match(text_node.text_type):
             
             case(TextType.TEXT):
-                return LeafNode(None,self.text)
+                return LeafNode(None,text_node.text)
             
             case(TextType.BOLD):
-                return LeafNode("b", self.text)
+                return LeafNode("b", text_node.text)
             
             case(TextType.ITALIC):
-                return LeafNode("i" , self.text)
+                return LeafNode("i" , text_node.text)
             
             case(TextType.CODE):
-                return LeafNode("code", self.text)
+                return LeafNode("code", text_node.text)
             
             case(TextType.LINKS):
-                return LeafNode("a",self.text,{"href": self.url})
+                return LeafNode("a",text_node.text,{"href":text_node.url})
             
             case(TextType.IMAGES):
-                return LeafNode("img","",{"src":self.url, "alt":self.text })
+                return LeafNode("img","",{"src":text_node.url, "alt":text_node.text })
             
             case _:
                 raise ValueError(f"Invalid text type: {text_node.text_type}")
     
-    def split_nodes_delimiter(self, nodes, delimiter, text_type):
+    def split_nodes_delimiter(nodes, delimiter, text_type):
         result = []
         for node in nodes:
             if node.text_type != TextType.TEXT:
@@ -62,7 +63,7 @@ class TextNode:
                     result.append(TextNode(text,TextType.TEXT))
         return result
            
-    def split_nodes_links(self, old_nodes):
+    def split_nodes_links(old_nodes):
         result = []
         for node in old_nodes:
             if node.text_type != TextType.TEXT or "]" not in node.text: 
@@ -83,7 +84,7 @@ class TextNode:
                         result.append(TextNode(alt_text,TextType.LINKS,url))
         return result
     
-    def split_nodes_images(self, old_nodes):
+    def split_nodes_images(old_nodes):
         result = []
         for node in old_nodes:
             if node.text_type != TextType.TEXT or "![" not in node.text:
@@ -104,19 +105,19 @@ class TextNode:
                         result.append(TextNode(alt_text,TextType.IMAGES,url))
         return result
 
-    def text_to_textnodes(self,text):
+    def text_to_textnodes(text):
         if text == None:
             raise ValueError("Text cant be None")
         text_node = [TextNode(text,TextType.TEXT)]
-        bold_nodes = TextNode.split_nodes_delimiter(self,text_node,"**",TextType.BOLD)
+        bold_nodes = TextNode.split_nodes_delimiter(text_node,"**",TextType.BOLD)
         #print(f"\n\n===============BOLD NODES===============\n\n{bold_nodes}")
-        italic_nodes = TextNode.split_nodes_delimiter(self,bold_nodes,"*",TextType.ITALIC)
+        italic_nodes = TextNode.split_nodes_delimiter(bold_nodes,"*",TextType.ITALIC)
         #print(f"\n\n===============ITALIC NODES===============\n\n{italic_nodes}")
-        code_nodes = TextNode.split_nodes_delimiter(self,italic_nodes,"`",TextType.CODE)
+        code_nodes = TextNode.split_nodes_delimiter(italic_nodes,"`",TextType.CODE)
         #print(f"\n\n===============CODE NODES===============\n\n{code_nodes}")
-        image_nodes = TextNode.split_nodes_images(self,code_nodes)
+        image_nodes = TextNode.split_nodes_images(code_nodes)
         #print(f"\n\n===============IMAGE NODES===============\n\n{image_nodes}")
-        link_nodes = TextNode.split_nodes_links(self,image_nodes)
+        link_nodes = TextNode.split_nodes_links(image_nodes)
         #print(link_nodes)
         return link_nodes
 
